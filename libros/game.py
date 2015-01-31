@@ -1,4 +1,5 @@
 import random
+from itertools import cycle
 
 
 def deal(players):
@@ -35,3 +36,26 @@ def deal(players):
         return deck[12:]
     if players == 2:
         return deck[21:]
+
+
+class Game(object):
+    def __init__(self):
+        self.players = []
+        self.deck = None
+        self.state = 'waiting'
+
+    def join(self, player):
+        self.players.append(player)
+
+    def start(self):
+        assert self.player_count in [2, 3, 4]
+        self.state = 'place'
+        self.deck = deal(self.player_count)
+
+    @property
+    def player_count(self):
+        return len(self.players)
+
+
+class Player(object):
+    pass
