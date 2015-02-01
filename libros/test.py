@@ -106,11 +106,11 @@ class TestGame(TestCase):
         deck_count = game.deck_count
         self.assertIn(active_player, players)
 
-        for i in range(game.player_num_turns):
+        for i in range(game.turns_per_player):
             player, card, action = self._player_turn(game)
             self.assertEqual(player, active_player)
 
-        self.assertEqual(game.deck_count, deck_count - game.player_num_turns)
+        self.assertEqual(game.deck_count, deck_count - game.turns_per_player)
         self.assertEqual(game.turns_left, 0)
 
         next_active_player = game.active_player
