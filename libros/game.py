@@ -1,12 +1,20 @@
 import random
+
+from copy import copy
 from itertools import cycle
 
 
 ACTION_TAKE_CARD = 0
 ACTION_PILE_CARD = 1
 ACTION_SHOW_CARD = 2
+ACTION_DISCARD_CARD = 3
+ACTION_TAKE_PUBLIC_CARD = 4
 
-ACTIONS = [ACTION_TAKE_CARD, ACTION_PILE_CARD, ACTION_SHOW_CARD]
+ACTIONS = [
+    ACTION_TAKE_CARD, ACTION_PILE_CARD,
+    ACTION_SHOW_CARD, ACTION_DISCARD_CARD,
+    ACTION_TAKE_PUBLIC_CARD,
+]
 
 
 def deal(players):
@@ -55,10 +63,11 @@ class Game(object):
         self.player_turns_left = 0
         self.pile = []
         self.public = []
+        self.discarded = []
 
     def join(self, player):
         self.players.append(player)
-        player.join(self)
+        player.join(self, len(self.players))
 
     def start(self):
         assert self.player_count in [2, 3, 4]
@@ -84,10 +93,28 @@ class Game(object):
     def deck_count(self):
         return len(self.deck)
 
+    @property
+    def pile_count(self):
+        return len(self.pile)
+
+    @property
+    def discarded_count(self):
+        return len(self.discarded)
+
+    @property
+    def public_count(self):
+        return len(self.public)
+
     def next_player(self):
-        assert self.state == 'next_player'
-        self.state = 'turn'
-        self.player = next(self.players_cycle)
+        if self.state == 'next_player':
+            self.state = 'turn'
+            self.reset_actions()
+            self.player = next(self.players_cycle)
+            self.player_turns_left = self.turns_per_player
+        elif self.state == 'public':
+            self.player = next(self.players_cycle)
+        else:
+            raise ValueError('Incorrect state.')
 
     @property
     def active_player(self):
@@ -98,33 +125,90 @@ class Game(object):
         return self.player_turns_left
 
     def turn(self):
-        assert self.deck
-        assert self.turns_left > 0
-        assert self.state == 'turn'
-        card = self.deck.pop()
-        self.player_turns_left -= 1
-        return self.active_player, card
+        if self.state == 'turn':
+            assert self.deck
+            assert self.turns_left > 0
+            card = self.deck.pop()
+            self.player_turns_left -= 1
+        elif self.state == 'public':
+            card = self.active_player.choose_public_card(copy(self.public))
+        else:
+            raise ValueError('Incorrect state.')
+
+        return self.active_player, card, self.valid_actions(card)
 
     def turn_complete(self, player):
-        if self.turns_left == 0:
+        if self.turns_left == 0 and self.public:
+            self.state = 'public'
+            self.next_player()
+        elif self.deck_count == 0:
+            self.state = 'auction'
+        elif self.state == 'public' and not self.public:
+            self.next_player()  # == last active player => skip take public
+            self.state = 'next_player'
+            self.next_player()
+        elif self.turns_left == 0:
             self.state = 'next_player'
             self.next_player()
 
+    def valid_actions(self, card):
+        if self.state == 'public':
+            return [ACTION_TAKE_PUBLIC_CARD]
+
+        actions = copy(ACTIONS)
+        actions.remove(ACTION_TAKE_PUBLIC_CARD)
+        actions.remove(ACTION_DISCARD_CARD)  # TODO: depends on card
+
+        if self.action_show == self.player_count - 1:
+            actions.remove(ACTION_SHOW_CARD)
+        if self.action_pile:
+            actions.remove(ACTION_PILE_CARD)
+        if self.action_take_card:
+            actions.remove(ACTION_TAKE_CARD)
+
+        return actions
+
+    def reset_actions(self):
+        (self.action_discard, self.action_pile, self.action_take_card,
+         self.action_show, self.action_take_public) = (0, 0, 0, 0, 0)
+
     def pile_card(self, card):
+        self.action_pile += 1
         self.pile.append(card)
 
     def show_card(self, card):
+        self.action_show += 1
         self.public.append(card)
+
+    def discard_card(self, card):
+        self.action_discard += 1
+        self.discarded.append(card)
+
+    def take_public_card(self, card):
+        self.action_take_public += 1
+        self.public.remove(card)
+
+    def take_card(self, card):
+        self.action_take_card += 1
 
 
 class Player(object):
     def __init__(self):
         self.game = None
         self.cards = []
+        self.id = None
 
-    def join(self, game):
+    def __repr__(self):
+        return u'ID: %d, Cards: %d' % (self.id, len(self.cards))
+
+    def join(self, game, number):
         assert not self.game
         self.game = game
+        self.id = number
+
+    def choose_public_card(self, cards):
+        assert cards
+        return cards[0]
 
     def act(self, card, action=None):
         assert self.game
@@ -137,8 +221,14 @@ class Player(object):
 
         if action == ACTION_TAKE_CARD:
             self.cards.append(card)
+            self.game.take_card(card)
         elif action == ACTION_PILE_CARD:
             self.game.pile_card(card)
+        elif action == ACTION_DISCARD_CARD:
+            self.game.discard_card(card)
+        elif action == ACTION_TAKE_PUBLIC_CARD:
+            self.cards.append(card)
+            self.game.take_public_card(card)
         else:
             self.game.show_card(card)
 
