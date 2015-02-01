@@ -1,4 +1,6 @@
-from unittest import TestCase
+import random
+
+from unittest import TestCase, skip
 
 from libros.game import (
     deal, Game, Player,
@@ -44,7 +46,11 @@ class TestGame(TestCase):
     def _player_turn(self, game, action=None):
         active_player = game.active_player
 
-        player, card = game.turn()
+        player, card, valid_actions = game.turn()
+
+        if action is None or action not in valid_actions:
+            action = random.choice(valid_actions)
+
         action = player.act(card, action)
 
         self.assertIn(action, ACTIONS)
@@ -101,6 +107,7 @@ class TestGame(TestCase):
         self._assert_cards_count(
             game, active_player, pile=0, public=0, discarded=0, player=1)
 
+    @skip("Skip until discard card is properly implemented")
     def test_discard_card(self):
         game, players = self._start_game()
 
@@ -127,7 +134,48 @@ class TestGame(TestCase):
             self.assertEqual(player, active_player)
 
         self.assertEqual(game.deck_count, deck_count - game.turns_per_player)
-        self.assertEqual(game.turns_left, 0)
+
+        self.assertEqual(game.public_count, game.player_count - 1)
+        self.assertEqual(game.state, 'public')
+
+        player, card, action = self._player_turn(game)
 
         next_active_player = game.active_player
         self.assertNotEqual(active_player, next_active_player)
+        self.assertEqual(game.turns_left, 3)
+
+    def test_until_auction_phase_2_players(self):
+        game, players = self._start_game(2)
+
+        while game.state != 'auction':
+            player, card, action = self._player_turn(game)
+
+        player_cards = sum([len(p.cards) for p in players])
+        total_cards = (game.discarded_count + game.public_count +
+                       game.pile_count + player_cards)
+
+        self.assertEqual(total_cards, 60)
+
+    def test_until_auction_phase_3_players(self):
+        game, players = self._start_game(3)
+
+        while game.state != 'auction':
+            player, card, action = self._player_turn(game)
+
+        player_cards = sum([len(p.cards) for p in players])
+        total_cards = (game.discarded_count + game.public_count +
+                       game.pile_count + player_cards)
+
+        self.assertEqual(total_cards, 72)
+
+    def test_until_auction_phase_4_players(self):
+        game, players = self._start_game(4)
+
+        while game.state != 'auction':
+            player, card, action = self._player_turn(game)
+
+        player_cards = sum([len(p.cards) for p in players])
+        total_cards = (game.discarded_count + game.public_count +
+                       game.pile_count + player_cards)
+
+        self.assertEqual(total_cards, 80)
