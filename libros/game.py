@@ -125,18 +125,20 @@ class Player(object):
         assert not self.game
         self.game = game
 
-    def act(self, card):
+    def act(self, card, action=None):
         assert self.game
+        assert card
 
-        choice = random.choice(ACTIONS)
+        if action not in ACTIONS:
+            action = random.choice(ACTIONS)
 
-        if choice == ACTION_TAKE_CARD:
+        if action == ACTION_TAKE_CARD:
             self.cards.append(card)
-        elif choice == ACTION_PILE_CARD:
+        elif action == ACTION_PILE_CARD:
             self.game.pile_card(card)
         else:
             self.game.show_card(card)
 
         self.game.turn_complete(self)
 
-        return choice
+        return action
