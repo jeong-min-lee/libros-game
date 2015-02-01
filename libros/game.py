@@ -48,10 +48,14 @@ def deal(players):
 class Game(object):
     def __init__(self):
         self.players = []
+        self.players_cycle = []
         self.deck = None
         self.state = 'waiting'
         self.player = None
-        self.turns = 0
+        self.active_turns_left = 0
+        self.active_cycle = 0
+        self.player_cycles = 0
+        self.player_num_turns = 0
         self.pile = []
         self.public = []
 
@@ -61,24 +65,49 @@ class Game(object):
 
     def start(self):
         assert self.player_count in [2, 3, 4]
-        self.state = 'place'
-        self.player = self.players[0]
+        self.state = 'start'
         # 1 into hand + 1 into pile + (player_count - 1) in front
-        self.turns = 2 + self.player_count - 1
+        self.player_num_turns = 2 + self.player_count - 1
+        self.active_turns_left = self.player_num_turns
         self.deck = deal(self.player_count)
+        self.player_cycles = self.deck_count / self.player_num_turns
+        self.players_cycle = cycle(self.players)
+        self.state = 'next_player'
+        self.next_player()
 
     @property
     def player_count(self):
         return len(self.players)
 
     @property
+    def deck_count(self):
+        return len(self.deck)
+
+    def next_player(self):
+        assert self.state == 'next_player'
+        self.state = 'turn'
+        self.player = next(self.players_cycle)
+
+    @property
     def active_player(self):
         return self.player
 
+    @property
+    def turns_left(self):
+        return self.active_turns_left
+
     def turn(self):
         assert self.deck
+        assert self.turns_left > 0
+        assert self.state == 'turn'
         card = self.deck.pop()
+        self.active_turns_left -= 1
         return self.active_player, card
+
+    def turn_complete(self, player):
+        if self.turns_left == 0:
+            self.state = 'next_player'
+            self.next_player()
 
     def pile_card(self, card):
         self.pile.append(card)
@@ -107,5 +136,7 @@ class Player(object):
             self.game.pile_card(card)
         else:
             self.game.show_card(card)
+
+        self.game.turn_complete(self)
 
         return choice

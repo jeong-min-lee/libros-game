@@ -20,7 +20,7 @@ class TestGame(TestCase):
         self.assertEqual(game.state, 'waiting')
         self.assertEqual(game.player_count, 2)
         game.start()
-        self.assertEqual(game.state, 'place')
+        self.assertEqual(game.state, 'turn')
 
     def _player_turn(self, game):
         active_player = game.active_player
@@ -41,7 +41,17 @@ class TestGame(TestCase):
         game.join(player2)
         game.start()
 
-        self.assertEqual(game.state, 'place')
+        self.assertEqual(game.state, 'turn')
         self.assertEqual(game.player_count, 2)
 
-        player, card, choice = self._player_turn(game)
+        active_player = game.active_player
+        self.assertIn(active_player, [player1, player2])
+
+        for i in range(game.player_num_turns):
+            player, card, choice = self._player_turn(game)
+            self.assertEqual(player, active_player)
+
+        self.assertEqual(game.turns_left, 0)
+
+        next_active_player = game.active_player
+        self.assertNotEqual(active_player, next_active_player)
