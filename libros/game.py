@@ -5,8 +5,12 @@ from itertools import cycle
 ACTION_TAKE_CARD = 0
 ACTION_PILE_CARD = 1
 ACTION_SHOW_CARD = 2
+ACTION_DISCARD_CARD = 3
 
-ACTIONS = [ACTION_TAKE_CARD, ACTION_PILE_CARD, ACTION_SHOW_CARD]
+ACTIONS = [
+    ACTION_TAKE_CARD, ACTION_PILE_CARD,
+    ACTION_SHOW_CARD, ACTION_DISCARD_CARD,
+]
 
 
 def deal(players):
@@ -55,6 +59,7 @@ class Game(object):
         self.player_turns_left = 0
         self.pile = []
         self.public = []
+        self.discarded = []
 
     def join(self, player):
         self.players.append(player)
@@ -116,6 +121,9 @@ class Game(object):
     def show_card(self, card):
         self.public.append(card)
 
+    def discard_card(self, card):
+        self.discarded.append(card)
+
 
 class Player(object):
     def __init__(self):
@@ -139,6 +147,8 @@ class Player(object):
             self.cards.append(card)
         elif action == ACTION_PILE_CARD:
             self.game.pile_card(card)
+        elif action == ACTION_DISCARD_CARD:
+            self.game.discard_card(card)
         else:
             self.game.show_card(card)
 

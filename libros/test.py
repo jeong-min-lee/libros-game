@@ -2,7 +2,8 @@ from unittest import TestCase
 
 from libros.game import (
     deal, Game, Player,
-    ACTIONS, ACTION_PILE_CARD, ACTION_SHOW_CARD, ACTION_TAKE_CARD,
+    ACTIONS, ACTION_PILE_CARD, ACTION_SHOW_CARD,
+    ACTION_TAKE_CARD, ACTION_DISCARD_CARD,
 )
 
 
@@ -51,53 +52,68 @@ class TestGame(TestCase):
 
         return player, card, action
 
+    def _assert_cards_count(self, game, check_player,
+                            pile, public, discarded, player):
+        self.assertEqual(len(game.pile), pile)
+        self.assertEqual(len(game.public), public)
+        self.assertEqual(len(game.discarded), discarded)
+        self.assertEqual(len(check_player.cards), player)
+
     def test_pile_card(self):
         game, players = self._start_game()
 
         active_player = game.active_player
 
-        self.assertEqual(len(game.pile), 0)
-        self.assertEqual(len(game.public), 0)
-        self.assertEqual(len(active_player.cards), 0)
+        self._assert_cards_count(
+            game, active_player, pile=0, public=0, discarded=0, player=0)
 
         player, card, action = self._player_turn(game, ACTION_PILE_CARD)
 
         self.assertEqual(action, ACTION_PILE_CARD)
-        self.assertEqual(len(game.pile), 1)
-        self.assertEqual(len(game.public), 0)
-        self.assertEqual(len(active_player.cards), 0)
+        self._assert_cards_count(
+            game, active_player, pile=1, public=0, discarded=0, player=0)
 
     def test_show_card(self):
         game, players = self._start_game()
 
         active_player = game.active_player
 
-        self.assertEqual(len(game.pile), 0)
-        self.assertEqual(len(game.public), 0)
-        self.assertEqual(len(active_player.cards), 0)
+        self._assert_cards_count(
+            game, active_player, pile=0, public=0, discarded=0, player=0)
 
         player, card, action = self._player_turn(game, ACTION_SHOW_CARD)
 
         self.assertEqual(action, ACTION_SHOW_CARD)
-        self.assertEqual(len(game.pile), 0)
-        self.assertEqual(len(game.public), 1)
-        self.assertEqual(len(active_player.cards), 0)
+        self._assert_cards_count(
+            game, active_player, pile=0, public=1, discarded=0, player=0)
 
     def test_take_card(self):
         game, players = self._start_game()
 
         active_player = game.active_player
 
-        self.assertEqual(len(game.pile), 0)
-        self.assertEqual(len(game.public), 0)
-        self.assertEqual(len(active_player.cards), 0)
+        self._assert_cards_count(
+            game, active_player, pile=0, public=0, discarded=0, player=0)
 
         player, card, action = self._player_turn(game, ACTION_TAKE_CARD)
 
         self.assertEqual(action, ACTION_TAKE_CARD)
-        self.assertEqual(len(game.pile), 0)
-        self.assertEqual(len(game.public), 0)
-        self.assertEqual(len(active_player.cards), 1)
+        self._assert_cards_count(
+            game, active_player, pile=0, public=0, discarded=0, player=1)
+
+    def test_discard_card(self):
+        game, players = self._start_game()
+
+        active_player = game.active_player
+
+        self._assert_cards_count(
+            game, active_player, pile=0, public=0, discarded=0, player=0)
+
+        player, card, action = self._player_turn(game, ACTION_DISCARD_CARD)
+
+        self.assertEqual(action, ACTION_DISCARD_CARD)
+        self._assert_cards_count(
+            game, active_player, pile=0, public=0, discarded=1, player=0)
 
     def test_game(self):
         game, players = self._start_game()
