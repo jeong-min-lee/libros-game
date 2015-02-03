@@ -15,6 +15,20 @@ class TestGame(TestCase):
         self.assertEqual(len(deal(3)), 72)
         self.assertEqual(len(deal(2)), 60)
 
+    def test_deal_cards(self):
+        deck = deal(2, cards_to_remove=0, gold_to_remove=0)
+
+        self.assertEqual(len(deck), 87)
+
+        def _get_card(color, letter):
+            for card in deck:
+                if card.get('type') == color and card.get('letter') == letter:
+                    return card
+
+        for color in ['red', 'orange', 'green', 'blue', 'brown']:
+            for letter in 'ABCDEFGHI':
+                self.assertIsNotNone(_get_card(color, letter))
+
     def test_join(self):
         player1 = Player()
         player2 = Player()
