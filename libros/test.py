@@ -1,5 +1,6 @@
 import random
 
+from itertools import cycle
 from unittest import TestCase, skip
 
 from libros.game import (
@@ -31,6 +32,7 @@ class TestGame(TestCase):
             'green': zip('ABCDEFGHI', '1' * 7 + '2' * 2),
             'blue': zip('ABCDEFGHI', '2' * 4 + '3' * 3 + '4' * 2),
             'brown': zip('ABCDEFGHI', '2' * 4 + '3' * 3 + '4' * 2),
+            'gold': zip(cycle([None]), '1' * 11 + '2' * 11 + '3' * 11),
         }
 
         for color, distribution in color_distribution.iteritems():
