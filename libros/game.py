@@ -20,9 +20,15 @@ ACTIONS = [
 COLORS = ('blue', 'brown', 'red', 'orange', 'green')
 
 
-def deal(players):
+def deal(players, cards_to_remove=None, gold_to_remove=None):
     assert players in [2, 3, 4]
-    gold_to_remove = 4 - players
+
+    if cards_to_remove is None:
+        cards_to_remove = {2: 21, 3: 12, 4: 7}.get(players)
+
+    if gold_to_remove is None:
+        gold_to_remove = 4 - players
+
     cards = (
         ('blue',    2, 4),
         ('blue',    3, 3),
@@ -49,20 +55,14 @@ def deal(players):
     for color in COLORS:
         letters[color] = (x for x in string.ascii_uppercase)
     for kind, value, count in cards:
-        letter = None
-        def letter_getter():
-            if kind in letters:
-                return letters[kind].next()
-            return None
-        deck += [{'type': kind, 'value': value, 'letter': letter_getter()}
-                 for _ in xrange(count)]
+        deck += [{
+            'type': kind,
+            'value': value,
+            'letter': letters.get(kind, cycle([None])).next(),
+        } for _ in xrange(count)]
     random.shuffle(deck)
-    if players == 4:
-        return deck[7:]
-    if players == 3:
-        return deck[12:]
-    if players == 2:
-        return deck[21:]
+
+    return deck[cards_to_remove:]
 
 
 class Game(object):

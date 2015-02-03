@@ -1,5 +1,6 @@
 import random
 
+from itertools import cycle
 from unittest import TestCase, skip
 
 from libros.game import (
@@ -14,6 +15,35 @@ class TestGame(TestCase):
         self.assertEqual(len(deal(4)), 80)
         self.assertEqual(len(deal(3)), 72)
         self.assertEqual(len(deal(2)), 60)
+
+    def test_deal_cards(self):
+        deck = deal(2, cards_to_remove=0, gold_to_remove=0)
+
+        self.assertEqual(len(deck), 87)
+
+        def _get_card(color, letter, value):
+            for card in deck:
+                if card == {"type": color, "letter": letter, "value": value}:
+                    return card
+
+        color_distribution = {
+            'red': zip('ABCDEFGHI', '1' * 7 + '2' * 2),
+            'orange': zip('ABCDEFGHI', '1' * 7 + '2' * 2),
+            'green': zip('ABCDEFGHI', '1' * 7 + '2' * 2),
+            'blue': zip('ABCDEFGHI', '2' * 4 + '3' * 3 + '4' * 2),
+            'brown': zip('ABCDEFGHI', '2' * 4 + '3' * 3 + '4' * 2),
+            'gold': zip(cycle([None]), '1' * 11 + '2' * 11 + '3' * 11),
+            'change': zip(cycle([None]), [-2, -2, -1, -1, 0, 1, 1, 2, 2]),
+        }
+
+        count = 0
+
+        for color, distribution in color_distribution.iteritems():
+            for letter, value in distribution:
+                self.assertIsNotNone(_get_card(color, letter, int(value)))
+                count += 1
+
+        self.assertEqual(count, 87)
 
     def test_join(self):
         player1 = Player()
