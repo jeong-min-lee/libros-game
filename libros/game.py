@@ -165,18 +165,26 @@ class Game(object):
 
     def valid_actions(self, card):
         if self.state == 'public':
+            if card['type'] == 'change':
+                return [ACTION_DISCARD_CARD]
             return [ACTION_TAKE_PUBLIC_CARD]
 
         actions = copy(ACTIONS)
         actions.remove(ACTION_TAKE_PUBLIC_CARD)
-        actions.remove(ACTION_DISCARD_CARD)  # TODO: depends on card
+        actions.remove(ACTION_DISCARD_CARD)
 
         if self.action_show == self.player_count - 1:
             actions.remove(ACTION_SHOW_CARD)
+
         if self.action_pile:
             actions.remove(ACTION_PILE_CARD)
+
         if self.action_take_card:
             actions.remove(ACTION_TAKE_CARD)
+
+        if card['type'] == 'change' and (
+                ACTION_SHOW_CARD in actions or ACTION_TAKE_CARD in actions):
+            actions.append(ACTION_DISCARD_CARD)
 
         return actions
 
