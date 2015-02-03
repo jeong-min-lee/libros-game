@@ -55,13 +55,11 @@ def deal(players, cards_to_remove=None, gold_to_remove=None):
     for color in COLORS:
         letters[color] = (x for x in string.ascii_uppercase)
     for kind, value, count in cards:
-        letter = None
-        def letter_getter():
-            if kind in letters:
-                return letters[kind].next()
-            return None
-        deck += [{'type': kind, 'value': value, 'letter': letter_getter()}
-                 for _ in xrange(count)]
+        deck += [{
+            'type': kind,
+            'value': value,
+            'letter': letters.get(kind, cycle([None])).next(),
+        } for _ in xrange(count)]
     random.shuffle(deck)
 
     return deck[cards_to_remove:]

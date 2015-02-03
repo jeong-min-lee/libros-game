@@ -33,11 +33,17 @@ class TestGame(TestCase):
             'blue': zip('ABCDEFGHI', '2' * 4 + '3' * 3 + '4' * 2),
             'brown': zip('ABCDEFGHI', '2' * 4 + '3' * 3 + '4' * 2),
             'gold': zip(cycle([None]), '1' * 11 + '2' * 11 + '3' * 11),
+            'change': zip(cycle([None]), [-2, -2, -1, -1, 0, 1, 1, 2, 2]),
         }
+
+        count = 0
 
         for color, distribution in color_distribution.iteritems():
             for letter, value in distribution:
                 self.assertIsNotNone(_get_card(color, letter, int(value)))
+                count += 1
+
+        self.assertEqual(count, 87)
 
     def test_join(self):
         player1 = Player()
