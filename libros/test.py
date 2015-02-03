@@ -20,14 +20,22 @@ class TestGame(TestCase):
 
         self.assertEqual(len(deck), 87)
 
-        def _get_card(color, letter):
+        def _get_card(color, letter, value):
             for card in deck:
-                if card.get('type') == color and card.get('letter') == letter:
+                if card == {"type": color, "letter": letter, "value": value}:
                     return card
 
-        for color in ['red', 'orange', 'green', 'blue', 'brown']:
-            for letter in 'ABCDEFGHI':
-                self.assertIsNotNone(_get_card(color, letter))
+        color_distribution = {
+            'red': zip('ABCDEFGHI', '1' * 7 + '2' * 2),
+            'orange': zip('ABCDEFGHI', '1' * 7 + '2' * 2),
+            'green': zip('ABCDEFGHI', '1' * 7 + '2' * 2),
+            'blue': zip('ABCDEFGHI', '2' * 4 + '3' * 3 + '4' * 2),
+            'brown': zip('ABCDEFGHI', '2' * 4 + '3' * 3 + '4' * 2),
+        }
+
+        for color, distribution in color_distribution.iteritems():
+            for letter, value in distribution:
+                self.assertIsNotNone(_get_card(color, letter, int(value)))
 
     def test_join(self):
         player1 = Player()
