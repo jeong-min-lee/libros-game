@@ -1,4 +1,5 @@
 import random
+import string
 
 from copy import copy
 from itertools import cycle
@@ -15,6 +16,8 @@ ACTIONS = [
     ACTION_SHOW_CARD, ACTION_DISCARD_CARD,
     ACTION_TAKE_PUBLIC_CARD,
 ]
+
+COLORS = ('blue', 'brown', 'red', 'orange', 'green')
 
 
 def deal(players):
@@ -42,8 +45,17 @@ def deal(players):
         ('gold',    2, 11 - gold_to_remove),
         ('gold',    3, 11 - gold_to_remove))
     deck = []
+    letters = {}
+    for color in COLORS:
+        letters[color] = (x for x in string.ascii_uppercase)
     for kind, value, count in cards:
-        deck += [{kind: value} for _ in xrange(count)]
+        letter = None
+        def letter_getter():
+            if kind in letters:
+                return letters[kind].next()
+            return None
+        deck += [{'type': kind, 'value': value, 'letter': letter_getter()}
+                 for _ in xrange(count)]
     random.shuffle(deck)
     if players == 4:
         return deck[7:]
