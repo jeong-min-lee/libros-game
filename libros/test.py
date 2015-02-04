@@ -159,6 +159,8 @@ class TestGame(TestCase):
         deck_count = game.deck_count
         self.assertIn(active_player, players)
 
+        self.assertTrue(all(die == 3 for die in game.dice.values()))
+
         for i in range(game.turns_per_player):
             player, card, action = self._player_turn(game)
             self.assertEqual(player, active_player)
@@ -173,6 +175,21 @@ class TestGame(TestCase):
         next_active_player = game.active_player
         self.assertNotEqual(active_player, next_active_player)
         self.assertEqual(game.turns_left, 3)
+
+    def test_using_dice_change_cards(self):
+        game, players = self._start_game()
+        card = {'kind': 'change', 'value': -1, 'letter': None}
+        
+        game.use_change_card(card, [])
+        self.assertEqual(sum(game.dice.values()), 15)
+
+        card['value'] = 2
+        game.use_change_card(card, ['brown', 'red'])
+        self.assertEqual(sum(game.dice.values()), 17)
+
+        card['value'] = 0
+        game.use_change_card(card, ['-blue'])
+        self.assertEqual(sum(game.dice.values()), 16)
 
     def test_until_auction_phase_2_players(self):
         game, players = self._start_game(2)

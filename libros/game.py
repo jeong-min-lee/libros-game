@@ -76,6 +76,7 @@ class Game(object):
         self.pile = []
         self.public = []
         self.discarded = []
+        self.dice = {color: 3 for color in COLORS}
 
     def join(self, player):
         self.players.append(player)
@@ -148,6 +149,24 @@ class Game(object):
             raise ValueError('Incorrect state.')
 
         return self.active_player, card, self.valid_actions(card)
+
+    def use_change_card(self, card, colors):
+        value = card['value']
+        assert card['kind'] == 'change'
+        assert len(colors) == 0 or len(colors) == max(abs(value), 1)
+
+        if not colors:
+            return
+
+        if value == 0:
+            value = colors[0] == '+' and 1 or -1
+            colors = [colors[0][1:]]
+        for color in colors:
+            if value < 0:
+                self.dice[color] -= 1
+            else:
+                self.dice[color] += 1
+            
 
     def turn_complete(self, player):
         if self.turns_left == 0 and self.public:
