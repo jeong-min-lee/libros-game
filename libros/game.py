@@ -3,19 +3,17 @@ import string
 
 from copy import copy
 from itertools import cycle
+from collections import Counter
 
 
 ACTION_TAKE_CARD = 0
 ACTION_PILE_CARD = 1
 ACTION_SHOW_CARD = 2
 ACTION_DISCARD_CARD = 3
-ACTION_TAKE_PUBLIC_CARD = 4
-ACTION_DISCARD_PUBLIC_CARD = 5
 
 ACTIONS = [
     ACTION_TAKE_CARD, ACTION_PILE_CARD,
     ACTION_SHOW_CARD, ACTION_DISCARD_CARD,
-    ACTION_TAKE_PUBLIC_CARD, ACTION_DISCARD_PUBLIC_CARD,
 ]
 
 COLORS = ('blue', 'brown', 'red', 'orange', 'green')
@@ -77,6 +75,7 @@ class Game(object):
         self.pile = []
         self.public = []
         self.discarded = []
+        self.actions_taken = Counter()
 
     def join(self, player):
         self.players.append(player)
@@ -150,7 +149,20 @@ class Game(object):
 
         return self.active_player, card, self.valid_actions(card)
 
-    def turn_complete(self, player, card):
+    def turn_action(self, player, card, action):
+        action_func = {
+            ACTION_PILE_CARD: lambda: self.pile.append(card),
+            ACTION_SHOW_CARD: lambda: self.public.append(card),
+            ACTION_DISCARD_CARD: lambda: self.discarded.append(card),
+        }.get(action, lambda: None)
+
+        action_func()
+        self.actions_taken[action] += 1
+        if action == ACTION_DISCARD_CARD:
+            # discarding a card counts as taking it first as well
+            self.actions_taken[ACTION_TAKE_CARD] += 1
+
+    def turn_complete(self, player, card, action):
         if self.turns_left == 0 and self.public:
             # initiate public phase
             self.player_turns_left = -1
@@ -180,21 +192,20 @@ class Game(object):
     def valid_actions(self, card):
         if self.state == 'public':
             if card['type'] == 'change':
-                return [ACTION_DISCARD_PUBLIC_CARD]
-            return [ACTION_TAKE_PUBLIC_CARD]
+                return [ACTION_DISCARD_CARD]
+            return [ACTION_TAKE_CARD]
 
         actions = copy(ACTIONS)
-        actions.remove(ACTION_TAKE_PUBLIC_CARD)
-        actions.remove(ACTION_DISCARD_PUBLIC_CARD)
         actions.remove(ACTION_DISCARD_CARD)
 
-        if self.action_show == self.player_count - 1:
+        # if we have shown enough cards remove the action
+        if self.actions_taken[ACTION_SHOW_CARD] == self.player_count - 1:
             actions.remove(ACTION_SHOW_CARD)
 
-        if self.action_pile:
+        if self.actions_taken[ACTION_PILE_CARD]:
             actions.remove(ACTION_PILE_CARD)
 
-        if self.action_take_card:
+        if self.actions_taken[ACTION_TAKE_CARD]:
             actions.remove(ACTION_TAKE_CARD)
 
         if card['type'] == 'change' and ACTION_TAKE_CARD in actions:
@@ -203,28 +214,10 @@ class Game(object):
         return actions
 
     def reset_actions(self):
-        (self.action_discard, self.action_pile, self.action_take_card,
-         self.action_show, self.action_take_public) = (0, 0, 0, 0, 0)
-
-    def pile_card(self, card):
-        self.action_pile += 1
-        self.pile.append(card)
-
-    def show_card(self, card):
-        self.action_show += 1
-        self.public.append(card)
-
-    def discard_card(self, card):
-        self.action_discard += 1
-        self.action_take_card += 1
-        self.discarded.append(card)
+        self.actions_taken.clear()
 
     def take_public_card(self, card):
-        self.action_take_public += 1
         self.public.remove(card)
-
-    def take_card(self, card):
-        self.action_take_card += 1
 
 
 class Player(object):
@@ -256,18 +249,8 @@ class Player(object):
 
         if action == ACTION_TAKE_CARD:
             self.cards.append(card)
-            self.game.take_card(card)
-        elif action == ACTION_PILE_CARD:
-            self.game.pile_card(card)
-        elif action == ACTION_DISCARD_CARD:
-            self.game.discard_card(card)
-        elif action == ACTION_TAKE_PUBLIC_CARD:
-            self.cards.append(card)
-        elif action == ACTION_DISCARD_PUBLIC_CARD:
-            self.game.discard_card(card)
-        else:
-            self.game.show_card(card)
 
-        self.game.turn_complete(self, card)
+        self.game.turn_action(self, card, action)
+        self.game.turn_complete(self, card, action)
 
         return action
