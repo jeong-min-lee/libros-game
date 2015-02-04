@@ -217,3 +217,14 @@ class TestGame(TestCase):
                         {'type': 'green', 'value': 2, 'letter': 'D'}]
         self.assertEqual(player.score_type('green'), (3, 'A'))
         self.assertEqual(player.score_type('gold'), (3, None))
+        self.assertEqual(player.score_type('red'), (0, None))
+
+    def test_game_score(self):
+        game, players = self._start_game(2)
+        game.dice = {'green': 3, 'blue': 1, 'red': 1, 'orange': 1, 'brown': 1}
+        players[0].cards = [{'type': 'green', 'value': 2, 'letter': 'D'},
+                            {'type': 'blue', 'value': 3, 'letter': 'D'}]
+        players[1].cards = [{'type': 'red', 'value': 1, 'letter': 'A'},
+                            {'type': 'orange', 'value': 1, 'letter': 'A'},
+                            {'type': 'brown', 'value': 3, 'letter': 'D'}]
+        self.assertEqual(game.winner(), players[0])
