@@ -10,11 +10,12 @@ ACTION_PILE_CARD = 1
 ACTION_SHOW_CARD = 2
 ACTION_DISCARD_CARD = 3
 ACTION_TAKE_PUBLIC_CARD = 4
+ACTION_DISCARD_PUBLIC_CARD = 5
 
 ACTIONS = [
     ACTION_TAKE_CARD, ACTION_PILE_CARD,
     ACTION_SHOW_CARD, ACTION_DISCARD_CARD,
-    ACTION_TAKE_PUBLIC_CARD,
+    ACTION_TAKE_PUBLIC_CARD, ACTION_DISCARD_PUBLIC_CARD,
 ]
 
 COLORS = ('blue', 'brown', 'red', 'orange', 'green')
@@ -149,28 +150,42 @@ class Game(object):
 
         return self.active_player, card, self.valid_actions(card)
 
-    def turn_complete(self, player):
+    def turn_complete(self, player, card):
         if self.turns_left == 0 and self.public:
+            # initiate public phase
+            self.player_turns_left = -1
             self.state = 'public'
             self.next_player()
-        elif self.deck_count == 0:
-            self.state = 'auction'
-        elif self.state == 'public' and not self.public:
-            self.next_player()  # == last active player => skip take public
-            self.state = 'next_player'
+            return
+
+        if self.turns_left == -1:
+            # we're in the public phase so we remove the card
+            self.take_public_card(card)
             self.next_player()
-        elif self.turns_left == 0:
+            # and if there are still public cards we continue the phase
+            # if there aren't we can either be at the auction phase
+            # or we need to continue to the next player
+            if self.public:
+                return
+
+        if self.deck_count == 0:
+            self.state = 'auction'
+            return
+
+        if self.turns_left <= 0:
+            # current player finished their turn
             self.state = 'next_player'
             self.next_player()
 
     def valid_actions(self, card):
         if self.state == 'public':
             if card['type'] == 'change':
-                return [ACTION_DISCARD_CARD]
+                return [ACTION_DISCARD_PUBLIC_CARD]
             return [ACTION_TAKE_PUBLIC_CARD]
 
         actions = copy(ACTIONS)
         actions.remove(ACTION_TAKE_PUBLIC_CARD)
+        actions.remove(ACTION_DISCARD_PUBLIC_CARD)
         actions.remove(ACTION_DISCARD_CARD)
 
         if self.action_show == self.player_count - 1:
@@ -182,8 +197,7 @@ class Game(object):
         if self.action_take_card:
             actions.remove(ACTION_TAKE_CARD)
 
-        if card['type'] == 'change' and (
-                ACTION_SHOW_CARD in actions or ACTION_TAKE_CARD in actions):
+        if card['type'] == 'change' and ACTION_TAKE_CARD in actions:
             actions.append(ACTION_DISCARD_CARD)
 
         return actions
@@ -202,6 +216,7 @@ class Game(object):
 
     def discard_card(self, card):
         self.action_discard += 1
+        self.action_take_card += 1
         self.discarded.append(card)
 
     def take_public_card(self, card):
@@ -248,10 +263,11 @@ class Player(object):
             self.game.discard_card(card)
         elif action == ACTION_TAKE_PUBLIC_CARD:
             self.cards.append(card)
-            self.game.take_public_card(card)
+        elif action == ACTION_DISCARD_PUBLIC_CARD:
+            self.game.discard_card(card)
         else:
             self.game.show_card(card)
 
-        self.game.turn_complete(self)
+        self.game.turn_complete(self, card)
 
         return action

@@ -178,41 +178,44 @@ class TestGame(TestCase):
         self.assertNotEqual(active_player, next_active_player)
         self.assertEqual(game.turns_left, 3)
 
-    @skip("loop")
     def test_until_auction_phase_2_players(self):
         game, players = self._start_game(2)
 
+        self.assertEqual(len(game.deck), 60)
+
         while game.state != 'auction':
             player, card, action = self._player_turn(game)
 
         player_cards = sum([len(p.cards) for p in players])
-        total_cards = (game.discarded_count + game.public_count +
-                       game.pile_count + player_cards)
 
-        self.assertEqual(total_cards, 60)
+        self.assertEqual(game.public_count, 0)
+        self.assertEqual(game.pile_count, 20)
+        self.assertEqual(game.discarded_count + player_cards, 40)
 
-    @skip("loop")
     def test_until_auction_phase_3_players(self):
         game, players = self._start_game(3)
 
+        self.assertEqual(len(game.deck), 72)
+
         while game.state != 'auction':
             player, card, action = self._player_turn(game)
 
         player_cards = sum([len(p.cards) for p in players])
-        total_cards = (game.discarded_count + game.public_count +
-                       game.pile_count + player_cards)
 
-        self.assertEqual(total_cards, 72)
+        self.assertEqual(game.public_count, 0)
+        self.assertEqual(game.pile_count, 18)
+        self.assertEqual(game.discarded_count + player_cards, 54)
 
-    @skip("loop")
     def test_until_auction_phase_4_players(self):
         game, players = self._start_game(4)
 
+        self.assertEqual(len(game.deck), 80)
+
         while game.state != 'auction':
             player, card, action = self._player_turn(game)
 
         player_cards = sum([len(p.cards) for p in players])
-        total_cards = (game.discarded_count + game.public_count +
-                       game.pile_count + player_cards)
 
-        self.assertEqual(total_cards, 80)
+        self.assertEqual(game.public_count, 0)
+        self.assertEqual(game.pile_count, 16)
+        self.assertEqual(game.discarded_count + player_cards, 64)
