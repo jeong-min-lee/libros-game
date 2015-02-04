@@ -247,3 +247,9 @@ class Player(object):
         self.game.turn_complete(self)
 
         return action
+
+    def score_type(self, type):
+        cards = [(card['value'], card['letter'])
+                 for card in self.cards if card['type'] == type]
+        return (sum(card[0] for card in cards),
+                min(card[1] for card in cards))

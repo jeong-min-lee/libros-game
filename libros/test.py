@@ -209,3 +209,11 @@ class TestGame(TestCase):
                        game.pile_count + player_cards)
 
         self.assertEqual(total_cards, 80)
+
+    def test_player_score(self):
+        player = Player()
+        player.cards = [{'type': 'gold', 'value': 3, 'letter': None},
+                        {'type': 'green', 'value': 1, 'letter': 'A'},
+                        {'type': 'green', 'value': 2, 'letter': 'D'}]
+        self.assertEqual(player.score_type('green'), (3, 'A'))
+        self.assertEqual(player.score_type('gold'), (3, None))
