@@ -264,10 +264,13 @@ class TestGame(TestCase):
         self.assertEqual(game.winner(), players[0])
 
     def test_game_score_orange_tiebreaker(self):
-        game, players = self._start_game(2)
+        game, players = self._start_game(3)
         game.dice = {'green': 2, 'blue': 1, 'red': 1, 'orange': 1, 'brown': 1}
         players[0].cards = [{'type': 'red', 'value': 2, 'letter': 'D'},
                             {'type': 'gold', 'value': 3, 'letter': None}]
         players[1].cards = [{'type': 'orange', 'value': 2, 'letter': 'A'},
                             {'type': 'gold', 'value': 3, 'letter': None}]
+        # player 2 should not be considered for the tie breaker because his
+        # score was too low
+        players[2].cards = [{'type': 'brown', 'value': 3, 'letter': 'A'}]
         self.assertEqual(game.winner(), players[1])
