@@ -150,46 +150,40 @@ class Game(object):
         return self.active_player, card, self.valid_actions(card)
 
     def turn_action(self, player, card, action):
+        """Handles player action and its influence on the game."""
         action_func = {
             ACTION_PILE_CARD: lambda: self.pile.append(card),
             ACTION_SHOW_CARD: lambda: self.public.append(card),
             ACTION_DISCARD_CARD: lambda: self.discarded.append(card),
         }.get(action, lambda: None)
 
+        if self.state == 'public':
+            # we're in the public phase so we first remove the card
+            self.public.remove(card)
+
         action_func()
         self.actions_taken[action] += 1
+
         if action == ACTION_DISCARD_CARD:
             # discarding a card counts as taking it first as well
             self.actions_taken[ACTION_TAKE_CARD] += 1
 
     def turn_complete(self, player, card, action):
+        """Handles moving to the next state and advancing player turns."""
         if self.turns_left == 0 and self.public:
-            # initiate public phase
-            self.player_turns_left = -1
             self.state = 'public'
             self.next_player()
-            return
 
-        if self.turns_left == -1:
-            # we're in the public phase so we remove the card
-            self.take_public_card(card)
-            self.next_player()
-            # and if there are still public cards we continue the phase
-            # if there aren't we can either be at the auction phase
-            # or we need to continue to the next player
-            if self.public:
-                return
-
-        if self.deck_count == 0:
+        if self.deck_count == 0 and not self.public:
             self.state = 'auction'
-            return
 
-        if self.turns_left <= 0:
+        if self.state == 'public' and not self.public:
             # current player finished their turn
             self.state = 'next_player'
             self.next_player()
 
     def valid_actions(self, card):
+        """Returns a list of valid actions for the current turn."""
         if self.state == 'public':
             if card['type'] == 'change':
                 return [ACTION_DISCARD_CARD]
@@ -215,9 +209,6 @@ class Game(object):
 
     def reset_actions(self):
         self.actions_taken.clear()
-
-    def take_public_card(self, card):
-        self.public.remove(card)
 
     def winner(self):
         score = namedtuple('Score', ['value', 'player'])
