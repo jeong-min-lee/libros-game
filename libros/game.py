@@ -226,7 +226,8 @@ class Game(object):
                              for player in self.players],
                             reverse=True)[0][1]
             player_scores[winner] += self.dice[color]
-        return max((v, k) for k, v in player_scores.iteritems())[1]
+        return max((score, player.score_type('gold')[0], player)
+                   for player, score in player_scores.iteritems())[2]
 
 
 class Player(object):

@@ -238,3 +238,15 @@ class TestGame(TestCase):
                             {'type': 'orange', 'value': 1, 'letter': 'A'},
                             {'type': 'brown', 'value': 3, 'letter': 'D'}]
         self.assertEqual(game.winner(), players[0])
+
+    def test_game_score_gold_tiebreaker(self):
+        game, players = self._start_game(2)
+        game.dice = {'green': 2, 'blue': 1, 'red': 1, 'orange': 1, 'brown': 1}
+        players[0].cards = [{'type': 'green', 'value': 2, 'letter': 'D'},
+                            {'type': 'blue', 'value': 3, 'letter': 'D'},
+                            {'type': 'gold', 'value': 2, 'letter': None}]
+        players[1].cards = [{'type': 'red', 'value': 1, 'letter': 'A'},
+                            {'type': 'orange', 'value': 1, 'letter': 'A'},
+                            {'type': 'brown', 'value': 3, 'letter': 'D'},
+                            {'type': 'gold', 'value': 3, 'letter': None}]
+        self.assertEqual(game.winner(), players[1])
