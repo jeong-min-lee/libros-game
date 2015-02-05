@@ -3,7 +3,7 @@ import string
 
 from copy import copy
 from itertools import cycle
-from collections import Counter
+from collections import Counter, defaultdict
 
 
 ACTION_TAKE_CARD = 0
@@ -219,6 +219,15 @@ class Game(object):
     def take_public_card(self, card):
         self.public.remove(card)
 
+    def winner(self):
+        player_scores = defaultdict(lambda: 0)
+        for color in COLORS:
+            winner = sorted([(player.score_type(color), player)
+                             for player in self.players],
+                            reverse=True)[0][1]
+            player_scores[winner] += self.dice[color]
+        return max((v, k) for k, v in player_scores.iteritems())[1]
+
 
 class Player(object):
     def __init__(self):
@@ -254,3 +263,11 @@ class Player(object):
         self.game.turn_complete(self, card, action)
 
         return action
+
+    def score_type(self, type):
+        cards = [(card['value'], card['letter'])
+                 for card in self.cards if card['type'] == type]
+        if not cards:
+            return (0, None)
+        return (sum(card[0] for card in cards),
+                min(card[1] for card in cards))

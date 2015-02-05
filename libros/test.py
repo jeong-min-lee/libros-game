@@ -219,3 +219,22 @@ class TestGame(TestCase):
         self.assertEqual(game.public_count, 0)
         self.assertEqual(game.pile_count, 16)
         self.assertEqual(game.discarded_count + player_cards, 64)
+
+    def test_player_score(self):
+        player = Player()
+        player.cards = [{'type': 'gold', 'value': 3, 'letter': None},
+                        {'type': 'green', 'value': 1, 'letter': 'A'},
+                        {'type': 'green', 'value': 2, 'letter': 'D'}]
+        self.assertEqual(player.score_type('green'), (3, 'A'))
+        self.assertEqual(player.score_type('gold'), (3, None))
+        self.assertEqual(player.score_type('red'), (0, None))
+
+    def test_game_score(self):
+        game, players = self._start_game(2)
+        game.dice = {'green': 3, 'blue': 1, 'red': 1, 'orange': 1, 'brown': 1}
+        players[0].cards = [{'type': 'green', 'value': 2, 'letter': 'D'},
+                            {'type': 'blue', 'value': 3, 'letter': 'D'}]
+        players[1].cards = [{'type': 'red', 'value': 1, 'letter': 'A'},
+                            {'type': 'orange', 'value': 1, 'letter': 'A'},
+                            {'type': 'brown', 'value': 3, 'letter': 'D'}]
+        self.assertEqual(game.winner(), players[0])
