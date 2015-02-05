@@ -171,11 +171,11 @@ class TestGame(TestCase):
 
         self.assertEqual(game.public_count, game.player_count - 1)
         self.assertEqual(game.state, 'public')
+        self.assertNotEqual(active_player, game.active_player)
 
         player, card, action = self._player_turn(game)
 
-        next_active_player = game.active_player
-        self.assertNotEqual(active_player, next_active_player)
+        self.assertNotEqual(active_player, player)
         self.assertEqual(game.turns_left, 3)
 
     def test_until_auction_phase_2_players(self):
