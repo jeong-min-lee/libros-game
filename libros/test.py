@@ -267,10 +267,11 @@ class TestGame(TestCase):
         game, players = self._start_game(3)
         game.dice = {'green': 2, 'blue': 1, 'red': 1, 'orange': 1, 'brown': 1}
         players[0].cards = [{'type': 'red', 'value': 2, 'letter': 'D'},
+                            {'type': 'brown', 'value': 2, 'letter': 'B'},
                             {'type': 'gold', 'value': 3, 'letter': None}]
-        players[1].cards = [{'type': 'orange', 'value': 2, 'letter': 'A'},
+        players[1].cards = [{'type': 'orange', 'value': 3, 'letter': 'A'},
                             {'type': 'gold', 'value': 3, 'letter': None}]
         # player 2 should not be considered for the tie breaker because his
         # score was too low
-        players[2].cards = [{'type': 'brown', 'value': 3, 'letter': 'A'}]
+        players[2].cards = [{'type': 'brown', 'value': 4, 'letter': 'C'}]
         self.assertEqual(game.winner(), players[1])

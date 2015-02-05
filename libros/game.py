@@ -212,12 +212,14 @@ class Game(object):
 
     def winner(self):
         score = namedtuple('Score', ['valueletter', 'player'])
+        player_won = defaultdict(lambda: [])
         player_scores = defaultdict(lambda: 0)
         for color in COLORS:
             winner = max([score(player.score_type(color), player)
                           for player in self.players])
             if winner.valueletter.value:
                 player_scores[winner.player] += self.dice[color]
+                player_won[winner.player].append(color)
         # The rules don't say this but the author says "Those involved in the
         # tie for the win will use the Illuminator category as a tie-breaker;
         # hence, whoever has the highest total value wins, then it goes to
@@ -225,12 +227,12 @@ class Game(object):
         # then it moves down the line to Scribes and so on. This way, everyone
         # knows that Illuminators are slightly more valuable to have."
         return max((score,
-                    player.score_type('gold')[0],
-                    player.score_type('brown')[0],
-                    player.score_type('blue')[0],
-                    player.score_type('green')[0],
-                    player.score_type('orange')[0],
-                    player.score_type('red')[0],
+                    player.score_type('gold').value,
+                    'brown' in player_won[player],
+                    'blue' in player_won[player],
+                    'green' in player_won[player],
+                    'orange' in player_won[player],
+                    'red' in player_won[player],
                     player)
                    for player, score in player_scores.iteritems())[7]
 
