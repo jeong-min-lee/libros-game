@@ -250,3 +250,24 @@ class TestGame(TestCase):
                             {'type': 'brown', 'value': 3, 'letter': 'D'},
                             {'type': 'gold', 'value': 3, 'letter': None}]
         self.assertEqual(game.winner(), players[1])
+
+    def test_game_score_monk_tiebreaker(self):
+        game, players = self._start_game(2)
+        game.dice = {'green': 2, 'blue': 1, 'red': 1, 'orange': 1, 'brown': 1}
+        players[0].cards = [{'type': 'green', 'value': 2, 'letter': 'D'},
+                            {'type': 'brown', 'value': 2, 'letter': 'D'},
+                            {'type': 'gold', 'value': 3, 'letter': None}]
+        players[1].cards = [{'type': 'red', 'value': 1, 'letter': 'A'},
+                            {'type': 'orange', 'value': 1, 'letter': 'A'},
+                            {'type': 'blue', 'value': 3, 'letter': 'D'},
+                            {'type': 'gold', 'value': 3, 'letter': None}]
+        self.assertEqual(game.winner(), players[0])
+
+    def test_game_score_orange_tiebreaker(self):
+        game, players = self._start_game(2)
+        game.dice = {'green': 2, 'blue': 1, 'red': 1, 'orange': 1, 'brown': 1}
+        players[0].cards = [{'type': 'red', 'value': 2, 'letter': 'D'},
+                            {'type': 'gold', 'value': 3, 'letter': None}]
+        players[1].cards = [{'type': 'orange', 'value': 2, 'letter': 'A'},
+                            {'type': 'gold', 'value': 3, 'letter': None}]
+        self.assertEqual(game.winner(), players[1])

@@ -3,7 +3,7 @@ import string
 
 from copy import copy
 from itertools import cycle
-from collections import Counter, defaultdict
+from collections import Counter, defaultdict, namedtuple
 
 
 ACTION_TAKE_CARD = 0
@@ -220,14 +220,29 @@ class Game(object):
         self.public.remove(card)
 
     def winner(self):
+        score = namedtuple('Score', ['value', 'player'])
         player_scores = defaultdict(lambda: 0)
         for color in COLORS:
-            winner = sorted([(player.score_type(color), player)
+            winner = sorted([score(player.score_type(color), player)
                              for player in self.players],
-                            reverse=True)[0][1]
-            player_scores[winner] += self.dice[color]
-        return max((score, player.score_type('gold')[0], player)
-                   for player, score in player_scores.iteritems())[2]
+                            reverse=True)[0]
+            if winner.value:
+                player_scores[winner.player] += self.dice[color]
+        # The rules don't say this but the author says "Those involved in the
+        # tie for the win will use the Illuminator category as a tie-breaker;
+        # hence, whoever has the highest total value wins, then it goes to
+        # tie-breaker card. If none of the tied players have an Illuminator,
+        # then it moves down the line to Scribes and so on. This way, everyone
+        # knows that Illuminators are slightly more valuable to have."
+        return max((score,
+                    player.score_type('gold')[0],
+                    player.score_type('brown')[0],
+                    player.score_type('blue')[0],
+                    player.score_type('green')[0],
+                    player.score_type('orange')[0],
+                    player.score_type('red')[0],
+                    player)
+                   for player, score in player_scores.iteritems())[7]
 
 
 class Player(object):
