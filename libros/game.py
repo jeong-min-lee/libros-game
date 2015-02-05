@@ -272,9 +272,9 @@ class Player(object):
 
     def score_type(self, type):
         ValueLetter = namedtuple('ValueLetter', ['value', 'letter'])
-        cards = [(card['value'], card['letter'])
+        cards = [ValueLetter(card['value'], card['letter'])
                  for card in self.cards if card['type'] == type]
         if not cards:
             return ValueLetter(0, None)
-        return ValueLetter(sum(card[0] for card in cards),
-                           min(card[1] for card in cards))
+        return ValueLetter(sum(card.value for card in cards),
+                           min(card.letter for card in cards))
