@@ -76,6 +76,7 @@ class Game(object):
         self.public = []
         self.discarded = []
         self.actions_taken = Counter()
+        self.dice = {color: 3 for color in COLORS}
 
     def join(self, player):
         self.players.append(player)
@@ -167,6 +168,23 @@ class Game(object):
         if action == ACTION_DISCARD_CARD:
             # discarding a card counts as taking it first as well
             self.actions_taken[ACTION_TAKE_CARD] += 1
+
+    def use_change_card(self, card, colors):
+        value = card['value']
+        assert card['kind'] == 'change'
+        assert len(colors) == 0 or len(colors) == max(abs(value), 1)
+
+        if not colors:
+            return
+
+        if value == 0:
+            value = colors[0] == '+' and 1 or -1
+            colors = [colors[0][1:]]
+        for color in colors:
+            if value < 0:
+                self.dice[color] -= 1
+            else:
+                self.dice[color] += 1
 
     def turn_complete(self, player, card, action):
         """Handles moving to the next state and advancing player turns."""
