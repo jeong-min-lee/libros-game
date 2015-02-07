@@ -10,10 +10,12 @@ ACTION_TAKE_CARD = 0
 ACTION_PILE_CARD = 1
 ACTION_SHOW_CARD = 2
 ACTION_DISCARD_CARD = 3
+ACTION_USE_CARD = 4
 
 ACTIONS = [
     ACTION_TAKE_CARD, ACTION_PILE_CARD,
     ACTION_SHOW_CARD, ACTION_DISCARD_CARD,
+    ACTION_USE_CARD,
 ]
 
 COLORS = ('blue', 'brown', 'red', 'orange', 'green')
@@ -150,12 +152,12 @@ class Game(object):
 
         return self.active_player, card, self.valid_actions(card)
 
-    def turn_action(self, player, card, action):
+    def turn_action(self, player, card, action, change_colors):
         """Handles player action and its influence on the game."""
         action_func = {
             ACTION_PILE_CARD: lambda: self.pile.append(card),
             ACTION_SHOW_CARD: lambda: self.public.append(card),
-            ACTION_DISCARD_CARD: lambda: self.discarded.append(card),
+            ACTION_USE_CARD: lambda: self.use_change_card(card, change_colors),
         }.get(action, lambda: None)
 
         if self.state == 'public':
@@ -165,13 +167,14 @@ class Game(object):
         action_func()
         self.actions_taken[action] += 1
 
-        if action == ACTION_DISCARD_CARD:
-            # discarding a card counts as taking it first as well
+        if action in (ACTION_DISCARD_CARD, ACTION_USE_CARD):
+            # discarding/using a card counts as taking it first as well
             self.actions_taken[ACTION_TAKE_CARD] += 1
+            self.discarded.append(card)
 
     def use_change_card(self, card, colors):
         value = card['value']
-        assert card['kind'] == 'change'
+        assert card['type'] == 'change'
         assert len(colors) == 0 or len(colors) == max(abs(value), 1)
 
         if not colors:
@@ -204,11 +207,12 @@ class Game(object):
         """Returns a list of valid actions for the current turn."""
         if self.state == 'public':
             if card['type'] == 'change':
-                return [ACTION_DISCARD_CARD]
+                return [ACTION_DISCARD_CARD, ACTION_USE_CARD]
             return [ACTION_TAKE_CARD]
 
         actions = copy(ACTIONS)
         actions.remove(ACTION_DISCARD_CARD)
+        actions.remove(ACTION_USE_CARD)
 
         # if we have shown enough cards remove the action
         if self.actions_taken[ACTION_SHOW_CARD] == self.player_count - 1:
@@ -222,6 +226,7 @@ class Game(object):
 
         if card['type'] == 'change' and ACTION_TAKE_CARD in actions:
             actions.append(ACTION_DISCARD_CARD)
+            actions.append(ACTION_USE_CARD)
 
         return actions
 
@@ -273,7 +278,7 @@ class Player(object):
         assert cards
         return cards[0]
 
-    def act(self, card, action=None):
+    def act(self, card, action=None, change_colors=None):
         assert self.game
         assert card
 
@@ -282,10 +287,13 @@ class Player(object):
 
         assert action in ACTIONS
 
+        if action == ACTION_USE_CARD and change_colors is None:
+            change_colors = []
+
         if action == ACTION_TAKE_CARD:
             self.cards.append(card)
 
-        self.game.turn_action(self, card, action)
+        self.game.turn_action(self, card, action, change_colors)
         self.game.turn_complete(self, card, action)
 
         return action

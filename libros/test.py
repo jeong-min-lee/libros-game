@@ -182,7 +182,7 @@ class TestGame(TestCase):
 
     def test_using_dice_change_cards(self):
         game, players = self._start_game()
-        card = {'kind': 'change', 'value': -1, 'letter': None}
+        card = {'type': 'change', 'value': -1, 'letter': None}
 
         game.use_change_card(card, [])
         self.assertEqual(sum(game.dice.values()), 15)
