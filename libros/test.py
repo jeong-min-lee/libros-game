@@ -20,13 +20,6 @@ class TestGame(TestCase):
     def test_deal_cards(self):
         deck = deal(2, cards_to_remove=0, gold_to_remove=0)
 
-        self.assertEqual(len(deck), 87)
-
-        def _get_card(color, letter, value):
-            for card in deck:
-                if card == {"type": color, "letter": letter, "value": value}:
-                    return card
-
         color_distribution = {
             'red': zip('ABCDEFGHI', '1' * 7 + '2' * 2),
             'orange': zip('ABCDEFGHI', '1' * 7 + '2' * 2),
@@ -37,14 +30,12 @@ class TestGame(TestCase):
             'change': zip(repeat(None), [-2, -2, -1, -1, 0, 1, 1, 2, 2]),
         }
 
-        count = 0
-
-        for color, distribution in color_distribution.iteritems():
-            for letter, value in distribution:
-                self.assertIsNotNone(_get_card(color, letter, int(value)))
-                count += 1
-
-        self.assertEqual(count, len(deck))
+        self.assertEqual(
+            sorted(deck),
+            sorted({"type": color, "letter": letter, "value": int(value)}
+                   for color, distribution in color_distribution.iteritems()
+                   for letter, value in distribution)
+        )
 
     def test_join(self):
         player1 = Player()
@@ -79,7 +70,7 @@ class TestGame(TestCase):
 
         player, card, valid_actions = game.turn()
 
-        if action is None or action not in valid_actions:
+        if action not in valid_actions:
             action = random.choice(valid_actions)
 
         action = player.act(card, action)
@@ -163,7 +154,7 @@ class TestGame(TestCase):
         deck_count = game.deck_count
         self.assertIn(active_player, players)
 
-        self.assertTrue(all(die == 3 for die in game.dice.values()))
+        self.assertEqual(set(game.dice.values()), {3})
 
         for i in range(game.turns_per_player):
             player, card, action = self._player_turn(game)
@@ -203,7 +194,7 @@ class TestGame(TestCase):
         while game.state != 'auction':
             player, card, action = self._player_turn(game)
 
-        player_cards = sum([len(p.cards) for p in players])
+        player_cards = sum(len(p.cards) for p in players)
 
         self.assertEqual(game.public_count, 0)
         self.assertEqual(game.pile_count, 20)
@@ -217,7 +208,7 @@ class TestGame(TestCase):
         while game.state != 'auction':
             player, card, action = self._player_turn(game)
 
-        player_cards = sum([len(p.cards) for p in players])
+        player_cards = sum(len(p.cards) for p in players)
 
         self.assertEqual(game.public_count, 0)
         self.assertEqual(game.pile_count, 18)
@@ -231,7 +222,7 @@ class TestGame(TestCase):
         while game.state != 'auction':
             player, card, action = self._player_turn(game)
 
-        player_cards = sum([len(p.cards) for p in players])
+        player_cards = sum(len(p.cards) for p in players)
 
         self.assertEqual(game.public_count, 0)
         self.assertEqual(game.pile_count, 16)

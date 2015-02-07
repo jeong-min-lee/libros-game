@@ -1,8 +1,7 @@
 import random
 import string
 
-from copy import copy
-from itertools import cycle
+from itertools import cycle, repeat
 from collections import Counter, defaultdict, namedtuple
 
 
@@ -51,16 +50,14 @@ def deal(players, cards_to_remove=None, gold_to_remove=None):
         ('gold',    1, 11 - gold_to_remove),
         ('gold',    2, 11 - gold_to_remove),
         ('gold',    3, 11 - gold_to_remove))
-    deck = []
-    letters = {}
-    for color in COLORS:
-        letters[color] = (x for x in string.ascii_uppercase)
-    for kind, value, count in cards:
-        deck += [{
-            'type': kind,
-            'value': value,
-            'letter': letters.get(kind, cycle([None])).next(),
-        } for _ in xrange(count)]
+    letters = defaultdict(lambda: repeat(None), {
+        color: iter(string.ascii_uppercase) for color in COLORS
+    })
+    deck = [{
+        'type': kind,
+        'value': value,
+        'letter': next(letters[kind]),
+    } for kind, value, count in cards for _ in xrange(count)]
     random.shuffle(deck)
 
     return deck[cards_to_remove:]
@@ -78,14 +75,14 @@ class Game(object):
         self.public = []
         self.discarded = []
         self.actions_taken = Counter()
-        self.dice = {color: 3 for color in COLORS}
+        self.dice = dict.fromkeys(COLORS, 3)
 
     def join(self, player):
         self.players.append(player)
         player.join(self, len(self.players))
 
     def start(self):
-        assert self.player_count in [2, 3, 4]
+        assert 2 <= self.player_count <= 4
 
         self.state = 'start'
         self.player_turns_left = self.turns_per_player
@@ -146,7 +143,7 @@ class Game(object):
             card = self.deck.pop()
             self.player_turns_left -= 1
         elif self.state == 'public':
-            card = self.active_player.choose_public_card(copy(self.public))
+            card = self.active_player.choose_public_card(self.public[:])
         else:
             raise ValueError('Incorrect state.')
 
@@ -210,7 +207,7 @@ class Game(object):
                 return [ACTION_DISCARD_CARD, ACTION_USE_CARD]
             return [ACTION_TAKE_CARD]
 
-        actions = copy(ACTIONS)
+        actions = ACTIONS[:]
         actions.remove(ACTION_DISCARD_CARD)
         actions.remove(ACTION_USE_CARD)
 
@@ -235,11 +232,11 @@ class Game(object):
 
     def winner(self):
         score = namedtuple('Score', ['valueletter', 'player'])
-        player_won = defaultdict(lambda: {})
-        player_scores = defaultdict(lambda: 0)
+        player_won = defaultdict(dict)
+        player_scores = defaultdict(int)
         for color in COLORS:
-            winner = max([score(player.score_type(color), player)
-                          for player in self.players])
+            winner = max(score(player.score_type(color), player)
+                         for player in self.players)
             if winner.valueletter.value:
                 player_scores[winner.player] += self.dice[color]
                 player_won[winner.player][color] = True
