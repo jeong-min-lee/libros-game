@@ -57,7 +57,7 @@ def deal(players, cards_to_remove=None, gold_to_remove=None):
         'type': kind,
         'value': value,
         'letter': next(letters[kind]),
-    } for kind, value, count in cards for _ in xrange(count)]
+    } for kind, value, count in cards for _ in range(count)]
     random.shuffle(deck)
 
     return deck[cards_to_remove:]
@@ -235,8 +235,8 @@ class Game(object):
         player_won = defaultdict(dict)
         player_scores = defaultdict(int)
         for color in COLORS:
-            winner = max(score(player.score_type(color), player)
-                         for player in self.players)
+            winner = max((score(player.score_type(color), player)
+                          for player in self.players), key=lambda x: x[0])
             if winner.valueletter.value:
                 player_scores[winner.player] += self.dice[color]
                 player_won[winner.player][color] = True
@@ -254,7 +254,7 @@ class Game(object):
                     'orange' in player_won[player],
                     'red' in player_won[player],
                     player)
-                   for player, score in player_scores.iteritems())[7]
+                   for player, score in player_scores.items())[7]
 
 
 class Player(object):

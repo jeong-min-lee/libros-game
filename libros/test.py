@@ -1,6 +1,9 @@
 import random
 
-from mock import patch
+try:
+    from mock import patch
+except ImportError:
+    from unittest.mock import patch
 from itertools import repeat
 from unittest import TestCase, skip
 
@@ -30,11 +33,12 @@ class TestGame(TestCase):
             'change': zip(repeat(None), [-2, -2, -1, -1, 0, 1, 1, 2, 2]),
         }
 
+        sort_key = lambda x: (x['type'], x['letter'], x['value'])
         self.assertEqual(
-            sorted(deck),
-            sorted({"type": color, "letter": letter, "value": int(value)}
-                   for color, distribution in color_distribution.iteritems()
-                   for letter, value in distribution)
+            sorted(deck, key=sort_key),
+            sorted(({"type": color, "letter": letter, "value": int(value)}
+                    for color, distribution in color_distribution.items()
+                    for letter, value in distribution), key=sort_key)
         )
 
     def test_join(self):
