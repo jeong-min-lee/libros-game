@@ -1,7 +1,7 @@
 import random
 
 from mock import patch
-from itertools import cycle
+from itertools import repeat
 from unittest import TestCase, skip
 
 from libros.game import (
@@ -33,8 +33,8 @@ class TestGame(TestCase):
             'green': zip('ABCDEFGHI', '1' * 7 + '2' * 2),
             'blue': zip('ABCDEFGHI', '2' * 4 + '3' * 3 + '4' * 2),
             'brown': zip('ABCDEFGHI', '2' * 4 + '3' * 3 + '4' * 2),
-            'gold': zip(cycle([None]), '1' * 11 + '2' * 11 + '3' * 11),
-            'change': zip(cycle([None]), [-2, -2, -1, -1, 0, 1, 1, 2, 2]),
+            'gold': zip(repeat(None), '1' * 11 + '2' * 11 + '3' * 11),
+            'change': zip(repeat(None), [-2, -2, -1, -1, 0, 1, 1, 2, 2]),
         }
 
         count = 0
@@ -182,8 +182,8 @@ class TestGame(TestCase):
 
     def test_using_dice_change_cards(self):
         game, players = self._start_game()
-        card = {'kind': 'change', 'value': -1, 'letter': None}
-        
+        card = {'type': 'change', 'value': -1, 'letter': None}
+
         game.use_change_card(card, [])
         self.assertEqual(sum(game.dice.values()), 15)
 
