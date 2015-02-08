@@ -11,11 +11,12 @@ ACTION_PILE_CARD = 1
 ACTION_SHOW_CARD = 2
 ACTION_DISCARD_CARD = 3
 ACTION_USE_CARD = 4
+ACTION_BID_CARD = 5
 
 ACTIONS = [
     ACTION_TAKE_CARD, ACTION_PILE_CARD,
     ACTION_SHOW_CARD, ACTION_DISCARD_CARD,
-    ACTION_USE_CARD,
+    ACTION_USE_CARD, ACTION_BID_CARD,
 ]
 
 COLORS = ('blue', 'brown', 'red', 'orange', 'green')
@@ -79,6 +80,7 @@ class Game(object):
         self.discarded = []
         self.actions_taken = Counter()
         self.dice = {color: 3 for color in COLORS}
+        self.auction_card = None
 
     def join(self, player):
         self.players.append(player)
@@ -128,6 +130,9 @@ class Game(object):
             self.player_turns_left = self.turns_per_player
         elif self.state == 'public':
             self.player = next(self.players_cycle)
+        elif self.state == 'auction':
+            self.reset_actions()
+            self.player = next(self.players_cycle)
         else:
             raise ValueError('Incorrect state.')
 
@@ -140,19 +145,28 @@ class Game(object):
         return self.player_turns_left
 
     def turn(self):
+        player = self.active_player
+
         if self.state == 'turn':
             assert self.deck
             assert self.turns_left > 0
             card = self.deck.pop()
             self.player_turns_left -= 1
         elif self.state == 'public':
-            card = self.active_player.choose_public_card(copy(self.public))
+            card = player.choose_public_card(copy(self.public))
+        elif self.state == 'auction':
+            if self.auction_card:
+                card = self.auction_card
+            else:
+                card = self.pile.pop()
+                card['bid_player'], card['bid_gold'] = (None, 0)
+                self.auction_card = card
         else:
             raise ValueError('Incorrect state.')
 
-        return self.active_player, card, self.valid_actions(card)
+        return player, card, self.valid_actions(player, card)
 
-    def turn_action(self, player, card, action, change_colors):
+    def turn_action(self, player, card, action, change_colors, bid_gold):
         """Handles player action and its influence on the game."""
         action_func = {
             ACTION_PILE_CARD: lambda: self.pile.append(card),
@@ -166,6 +180,21 @@ class Game(object):
 
         action_func()
         self.actions_taken[action] += 1
+
+        if self.state == 'auction' and action == ACTION_BID_CARD and bid_gold:
+            # the player placed a bid so if it's higher (and not bidding again)
+            # we update the card with the new highest bidder
+            if bid_gold > card['bid_gold'] and player != card['bid_player']:
+                card['bid_player'], card['bid_gold'] = (player, bid_gold)
+        elif self.state == 'auction' and action == ACTION_BID_CARD:
+            # if current player didn't place the bid, but still is the last
+            # card bidder then this card now belongs to him
+            if player == card['bid_player']:
+                card['bid_won'] = True
+        elif self.state == 'auction':
+            # action isnt ACTION_BID_CARD which means the player that won
+            # the card is doing something else with it
+            self.auction_card = None
 
         if action in (ACTION_DISCARD_CARD, ACTION_USE_CARD):
             # discarding/using a card counts as taking it first as well
@@ -197,31 +226,43 @@ class Game(object):
 
         if self.deck_count == 0 and not self.public:
             self.state = 'auction'
+            # if the player won the card he still needs to use it
+            if 'bid_won' not in card:
+                self.next_player()
+
+        if self.state == 'auction' and not self.pile and not self.auction_card:
+            self.state = 'end'
 
         if self.state == 'public' and not self.public:
             # current player finished their turn
             self.state = 'next_player'
             self.next_player()
 
-    def valid_actions(self, card):
+    def valid_actions(self, player, card):
         """Returns a list of valid actions for the current turn."""
         if self.state == 'public':
             if card['type'] == 'change':
                 return [ACTION_DISCARD_CARD, ACTION_USE_CARD]
             return [ACTION_TAKE_CARD]
 
+        if self.state == 'auction' and card['bid_player'] != player:
+            return [ACTION_BID_CARD]
+
         actions = copy(ACTIONS)
         actions.remove(ACTION_DISCARD_CARD)
         actions.remove(ACTION_USE_CARD)
+        actions.remove(ACTION_BID_CARD)
 
         # if we have shown enough cards remove the action
-        if self.actions_taken[ACTION_SHOW_CARD] == self.player_count - 1:
+        if (self.state == 'auction' or
+                self.actions_taken[ACTION_SHOW_CARD] == self.player_count - 1):
             actions.remove(ACTION_SHOW_CARD)
 
-        if self.actions_taken[ACTION_PILE_CARD]:
+        if (self.state == 'auction' or
+                self.actions_taken[ACTION_PILE_CARD]):
             actions.remove(ACTION_PILE_CARD)
 
-        if self.actions_taken[ACTION_TAKE_CARD]:
+        if self.state != 'auction' and self.actions_taken[ACTION_TAKE_CARD]:
             actions.remove(ACTION_TAKE_CARD)
 
         if card['type'] == 'change' and ACTION_TAKE_CARD in actions:
@@ -278,7 +319,7 @@ class Player(object):
         assert cards
         return cards[0]
 
-    def act(self, card, action=None, change_colors=None):
+    def act(self, card, action=None, change_colors=None, bid_gold=None):
         assert self.game
         assert card
 
@@ -290,10 +331,16 @@ class Player(object):
         if action == ACTION_USE_CARD and change_colors is None:
             change_colors = []
 
+        if (bid_gold is None and
+                action == ACTION_BID_CARD and card['bid_player'] != self):
+            # first player bidding will get the card as he will bid the highest
+            bid_gold = 1
+
         if action == ACTION_TAKE_CARD:
             self.cards.append(card)
 
-        self.game.turn_action(self, card, action, change_colors)
+        self.game.turn_action(
+            self, card, action, change_colors=change_colors, bid_gold=bid_gold)
         self.game.turn_complete(self, card, action)
 
         return action

@@ -209,6 +209,15 @@ class TestGame(TestCase):
         self.assertEqual(game.pile_count, 20)
         self.assertEqual(game.discarded_count + player_cards, 40)
 
+        while game.state != 'end':
+            player, card, action = self._player_turn(game)
+
+        player_cards = sum([len(p.cards) for p in players])
+
+        self.assertEqual(game.public_count, 0)
+        self.assertEqual(game.pile_count, 0)
+        self.assertEqual(game.discarded_count + player_cards, 60)
+
     def test_until_auction_phase_3_players(self):
         game, players = self._start_game(3)
 
@@ -223,6 +232,15 @@ class TestGame(TestCase):
         self.assertEqual(game.pile_count, 18)
         self.assertEqual(game.discarded_count + player_cards, 54)
 
+        while game.state != 'end':
+            player, card, action = self._player_turn(game)
+
+        player_cards = sum([len(p.cards) for p in players])
+
+        self.assertEqual(game.public_count, 0)
+        self.assertEqual(game.pile_count, 0)
+        self.assertEqual(game.discarded_count + player_cards, 72)
+
     def test_until_auction_phase_4_players(self):
         game, players = self._start_game(4)
 
@@ -236,6 +254,15 @@ class TestGame(TestCase):
         self.assertEqual(game.public_count, 0)
         self.assertEqual(game.pile_count, 16)
         self.assertEqual(game.discarded_count + player_cards, 64)
+
+        while game.state != 'end':
+            player, card, action = self._player_turn(game)
+
+        player_cards = sum([len(p.cards) for p in players])
+
+        self.assertEqual(game.public_count, 0)
+        self.assertEqual(game.pile_count, 0)
+        self.assertEqual(game.discarded_count + player_cards, 80)
 
     def test_player_score(self):
         player = Player()
