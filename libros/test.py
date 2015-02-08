@@ -203,7 +203,7 @@ class TestGame(TestCase):
         while game.state != 'end':
             player, card, action = self._player_turn(game)
 
-        player_cards = sum([len(p.cards) for p in players])
+        player_cards = sum(len(p.cards) for p in players)
 
         self.assertEqual(game.public_count, 0)
         self.assertEqual(game.pile_count, 0)
@@ -226,7 +226,7 @@ class TestGame(TestCase):
         while game.state != 'end':
             player, card, action = self._player_turn(game)
 
-        player_cards = sum([len(p.cards) for p in players])
+        player_cards = sum(len(p.cards) for p in players)
 
         self.assertEqual(game.public_count, 0)
         self.assertEqual(game.pile_count, 0)
@@ -249,7 +249,7 @@ class TestGame(TestCase):
         while game.state != 'end':
             player, card, action = self._player_turn(game)
 
-        player_cards = sum([len(p.cards) for p in players])
+        player_cards = sum(len(p.cards) for p in players)
 
         self.assertEqual(game.public_count, 0)
         self.assertEqual(game.pile_count, 0)
