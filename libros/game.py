@@ -128,6 +128,9 @@ class Game(object):
             self.player_turns_left = self.turns_per_player
         elif self.state == 'public':
             self.player = next(self.players_cycle)
+        elif self.state == 'auction':
+            self.reset_actions()
+            self.player = next(self.players_cycle)
         else:
             raise ValueError('Incorrect state.')
 
@@ -199,6 +202,7 @@ class Game(object):
 
         if self.deck_count == 0 and not self.public:
             self.state = 'auction'
+            self.next_player()
 
         if self.state == 'auction' and not self.pile:
             self.state = 'end'
