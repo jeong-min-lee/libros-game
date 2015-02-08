@@ -147,6 +147,8 @@ class Game(object):
             self.player_turns_left -= 1
         elif self.state == 'public':
             card = self.active_player.choose_public_card(copy(self.public))
+        elif self.state == 'auction':
+            card = self.pile.pop()
         else:
             raise ValueError('Incorrect state.')
 
@@ -198,6 +200,9 @@ class Game(object):
         if self.deck_count == 0 and not self.public:
             self.state = 'auction'
 
+        if self.state == 'auction' and not self.pile:
+            self.state = 'end'
+
         if self.state == 'public' and not self.public:
             # current player finished their turn
             self.state = 'next_player'
@@ -215,13 +220,15 @@ class Game(object):
         actions.remove(ACTION_USE_CARD)
 
         # if we have shown enough cards remove the action
-        if self.actions_taken[ACTION_SHOW_CARD] == self.player_count - 1:
+        if (self.state == 'auction' or
+                self.actions_taken[ACTION_SHOW_CARD] == self.player_count - 1):
             actions.remove(ACTION_SHOW_CARD)
 
-        if self.actions_taken[ACTION_PILE_CARD]:
+        if (self.state == 'auction' or
+                self.actions_taken[ACTION_PILE_CARD]):
             actions.remove(ACTION_PILE_CARD)
 
-        if self.actions_taken[ACTION_TAKE_CARD]:
+        if self.state != 'auction' and self.actions_taken[ACTION_TAKE_CARD]:
             actions.remove(ACTION_TAKE_CARD)
 
         if card['type'] == 'change' and ACTION_TAKE_CARD in actions:

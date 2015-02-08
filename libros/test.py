@@ -209,6 +209,9 @@ class TestGame(TestCase):
         self.assertEqual(game.pile_count, 20)
         self.assertEqual(game.discarded_count + player_cards, 40)
 
+        while game.state != 'end':
+            player, card, action = self._player_turn(game)
+
     def test_until_auction_phase_3_players(self):
         game, players = self._start_game(3)
 
